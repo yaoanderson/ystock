@@ -19,13 +19,18 @@ def get_info(num, code):
     _domain = "SH" if code.startswith("6") else "SZ"
 
     # this program is focus on data from 20191115
-    data_day = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20191115", end_date=end)
+    try:
+        data_day = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20191115", end_date=end)
+    except Exception as e:
+        if u"TOKEN无效" in e.args[1]:
+            raise Exception("请在auth.txt文件中填入有效的token")
+        raise e
 
     _close_list = list(reversed(data_day["close"].tolist()))
 
     _last = _close_list[-1]
     _max = max(_close_list)
-    _min = min(_close_list)
+    _min = min(_close_list[: -1])
     _gap = _last - _max
     _gap_percent = round(_gap / _max, 4) * 100
 
@@ -48,15 +53,24 @@ def get_info(num, code):
 
     time.sleep(3)
 
-    data_day_year = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20190801", end_date=end)
+    data_day_half_year = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20190801", end_date=end)
 
-    _close_year_list = list(reversed(data_day_year["close"].tolist()))
+    _close_half_year_list = list(reversed(data_day_half_year["close"].tolist()))
 
-    _min_year = min(_close_year_list)
+    _min_half_year = min(_close_half_year_list[: -15])
 
     time.sleep(3)
 
-    data_day = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20, 60, 120], freq='D', adj='qfq', start_date=start, end_date=end)
+    data_day_3_4_year = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20190501", end_date=end)
+
+    _close_3_4_year_list = list(reversed(data_day_3_4_year["close"].tolist()))
+
+    _min_3_4_year = min(_close_3_4_year_list[: -30])
+    _max_3_4_year = max(_close_3_4_year_list)
+
+    time.sleep(3)
+
+    data_day = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20], freq='D', adj='qfq', start_date=start, end_date=end)
 
     _close_list = list(reversed(data_day["close"].tolist()))
 
@@ -77,7 +91,7 @@ def get_info(num, code):
 
     time.sleep(3)
 
-    data_week = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20, 60, 120], freq='W', adj='qfq', start_date=start, end_date=end)
+    data_week = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20], freq='W', adj='qfq', start_date=start, end_date=end)
     _close_list = list(reversed(data_week["close"].tolist()))
 
     ma20_list = list(reversed(data_week["ma20"].tolist()))
@@ -97,7 +111,7 @@ def get_info(num, code):
 
     time.sleep(3)
 
-    data_month = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20, 60, 120], freq='M', adj='qfq', start_date=start, end_date=end)
+    data_month = ts.pro_bar(ts_code=code + "." + _domain, ma=[5, 10, 20], freq='M', adj='qfq', start_date=start, end_date=end)
     _close_list = list(reversed(data_month["close"].tolist()))
 
     ma20_list = list(reversed(data_month["ma20"].tolist()))
@@ -119,7 +133,7 @@ def get_info(num, code):
     _gap_list = [_last - _last_day_ma20, _last - _last_day_ma60, _last - _last_day_ma120,
                  _last - _last_week_ma20, _last - _last_week_ma60, _last - _last_week_ma120,
                  _last - _last_month_ma20, _last - _last_month_ma60, _last - _last_month_ma120,
-                 _last - _min, _last - _min_year]
+                 _last - _min, _last - _min_half_year, _last - _min_3_4_year]
     _gap_filter_list = list()
     for g in _gap_list:
         if g > 0:
@@ -151,13 +165,15 @@ def get_info(num, code):
         _position_last = u"在前期低点附近"
     elif _gap_index == 10:
         _position_last = u"在前期大低点附近"
+    elif _gap_index == 11:
+        _position_last = u"在前期大大低点附近"
     print _position_last.encode("utf-8") + "\n"
 
     # last 2nd
     _gap_last2_list = [_last2 - _last_day_ma20, _last2 - _last_day_ma60, _last2 - _last_day_ma120,
                        _last2 - _last_week_ma20, _last2 - _last_week_ma60, _last2 - _last_week_ma120,
                        _last2 - _last_month_ma20, _last2 - _last_month_ma60, _last2 - _last_month_ma120,
-                       _last2 - _min, _last - _min_year]
+                       _last2 - _min, _last - _min_half_year, _last - _min_3_4_year]
     _gap_last2_filter_list = list()
     for g in _gap_last2_list:
         if g > 0:
@@ -189,12 +205,14 @@ def get_info(num, code):
         _position_last2 = u"在前期低点附近"
     elif _gap_last2_index == 10:
         _position_last2 = u"在前期大低点附近"
+    elif _gap_last2_index == 11:
+        _position_last2 = u"在前期大大低点附近"
 
     # last 3rd
     _gap_last3_list = [_last3 - _last_day_ma20, _last3 - _last_day_ma60, _last3 - _last_day_ma120,
                        _last3 - _last_week_ma20, _last3 - _last_week_ma60, _last3 - _last_week_ma120,
                        _last3 - _last_month_ma20, _last3 - _last_month_ma60, _last3 - _last_month_ma120,
-                       _last3 - _min, _last - _min_year]
+                       _last3 - _min, _last - _min_half_year, _last - _min_3_4_year]
     _gap_last3_filter_list = list()
     for g in _gap_last3_list:
         if g > 0:
@@ -226,17 +244,23 @@ def get_info(num, code):
         _position_last3 = u"在前期低点附近"
     elif _gap_last3_index == 10:
         _position_last3 = u"在前期大低点附近"
+    elif _gap_last3_index == 11:
+        _position_last3 = u"在前期大大低点附近"
 
     _support_list = [_last_day_ma20, _last_day_ma60, _last_day_ma120, _last_week_ma20, _last_week_ma60, _last_week_ma120, _last_month_ma20, _last_month_ma60, _last_month_ma120, _last]
     _support_list.sort(reverse=True)
 
     stock_statistics_list.append((stock_dict[code], _gap, _gap_percent, _latest, _position_last,
                                   (u"持续3天处于该位置" if _position_last2 == _position_last3 else u"已经2天处于该位置")
-                                  if _position_last2 == _position_last else u"第一次进入该位置", _lower, _support_list.index(_last)))
+                                  if _position_last2 == _position_last else u"第一次进入该位置", _lower,
+                                  _support_list.index(_last), _last - _min, _last - _min_half_year,
+                                  _last - _min_3_4_year, round((_max_3_4_year - _last) / (_max_3_4_year - _min_3_4_year) * 100, 2)))
 
 
 with open(os.path.join(os.path.dirname(__file__), "..", "conf", "auth.txt"), "r") as rf:
-    ts.set_token(rf.read())
+    token = rf.read()
+    if token:
+        ts.set_token(token)
 
 stock_dict = dict()
 with open(os.path.join(os.path.dirname(__file__), "..", "conf", "stocks.json"), "r") as rf:
@@ -255,13 +279,13 @@ for i, cd in enumerate(stock_dict.keys()):
     get_info(i+1, cd)
 
 _output = u"涨跌值排行榜如下：\n排名,  涨跌值,  股票\n"
-for i, (name, gap, _, _, _, _, _, _) in enumerate(sorted(stock_statistics_list, key=lambda x: x[1])):
+for i, (name, gap, _, _, _, _, _, _, _, _, _, _) in enumerate(sorted(stock_statistics_list, key=lambda x: x[1])):
     _output += str(i+1) + ", " + str(gap) + ", " + name + "\n"
 
 _output += u"\n涨跌幅排行榜如下：\n排名,  涨跌幅,  股票,  最近动态,  当前位置\n"
-for i, (name, gap, percent, latest, position, status, lower, support) in enumerate(sorted(stock_statistics_list, key=lambda x: x[2])):
-    _output += str(i+1) + ", " + str(percent) + "%, " + name + ", " + latest + ", " + position + " [%s, %s, %s]\n" % \
-               (status, lower, u"已跌破%s个支撑/共9个" % support)
+for i, (name, gap, percent, latest, position, status, lower, support, min_gap, min_half_year_gap, min_3_4_year_gap, percent_3_4_year) in enumerate(sorted(stock_statistics_list, key=lambda x: x[2])):
+    _output += str(i+1) + ", " + str(percent) + "%, " + name + ", " + latest + ", " + position + " [%s, %s, %s, %s, %s, %s, %s]\n" % \
+               (status, lower, u"已跌破%s个支撑/共9个" % support, u"距离近期低点距离%s" % min_gap, u"距离前期大低点距离%s" % min_half_year_gap, u"距离前期大大低点距离%s" % min_3_4_year_gap, u"后半年最大回调幅度%s" % percent_3_4_year + u"%")
 
 print _output
 with open(os.path.join(os.path.dirname(__file__), "..", "output", "%s.csv" % today.strftime("%Y_%m_%d_%H_%M")), "w") as wf:
