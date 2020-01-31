@@ -18,6 +18,7 @@ def get_info(num, code):
     print str(num) + ". " + stock_dict[code] + ":"
     _domain = "SH" if code.startswith("6") else "SZ"
 
+    # this program is focus on data from 20191115
     data_day = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20191115", end_date=end)
 
     _close_list = list(reversed(data_day["close"].tolist()))
@@ -36,10 +37,22 @@ def get_info(num, code):
 
     _latest = u"加速下跌" if _last3_gap_percent > _last2_gap_percent else (u"开始反弹" if _last2_gap_percent > 0 else u"减速下跌")
 
+    # last 30 days sample
+    _last_30_days_max = max(_close_list[-30:])
+    _lower = u"继续再创新低" if _last == min(_close_list[_close_list.index(_last_30_days_max):]) else (u"没有创新低了" if _last2 == min(_close_list[_close_list.index(_last_30_days_max):]) else u"已经连续2天没有创新低了")
+
     print "当前价：" + str(_last), "总上涨：" + str(_gap) if _gap > 0 else "总下跌：" + str(_gap), \
         "总涨幅：" + str(_gap_percent) + "%" if _gap_percent > 0 else "总跌幅：" + str(_gap_percent) + "%", \
         "最近涨幅：" + str(_last2_gap_percent) + "%" if _last2_gap_percent > 0 else "最近跌幅：" + str(_last2_gap_percent) + "%", \
         "比前一日" + str(_last3_gap_percent) + "% " + _latest.encode("utf-8")
+
+    time.sleep(3)
+
+    data_day_year = ts.pro_bar(ts_code=code + "." + _domain, freq='D', adj='qfq', start_date="20190801", end_date=end)
+
+    _close_year_list = list(reversed(data_day_year["close"].tolist()))
+
+    _min_year = min(_close_year_list)
 
     time.sleep(3)
 
@@ -102,10 +115,11 @@ def get_info(num, code):
     _last_month_ma120 = round(sum(_month_ma120) / len(_month_ma120), 2)
     # print "月线：60均线：%s, 120均线：%s" % (_last_month_ma60, _last_month_ma120)
 
+    # last one
     _gap_list = [_last - _last_day_ma20, _last - _last_day_ma60, _last - _last_day_ma120,
                  _last - _last_week_ma20, _last - _last_week_ma60, _last - _last_week_ma120,
                  _last - _last_month_ma20, _last - _last_month_ma60, _last - _last_month_ma120,
-                 _last - _min]
+                 _last - _min, _last - _min_year]
     _gap_filter_list = list()
     for g in _gap_list:
         if g > 0:
@@ -113,31 +127,112 @@ def get_info(num, code):
         else:
             _gap_filter_list.append(100000)
 
-    _position = ""
+    _position_last = ""
     _gap_index = _gap_filter_list.index(min(_gap_filter_list))
     if _gap_index == 0:
-        _position = u"在日20日均线附近"
+        _position_last = u"在日20日均线附近"
     elif _gap_index == 1:
-        _position = u"在日60日均线附近"
+        _position_last = u"在日60日均线附近"
     elif _gap_index == 2:
-        _position = u"在日120日均线附近"
+        _position_last = u"在日120日均线附近"
     elif _gap_index == 3:
-        _position = u"在周20日均线附近"
+        _position_last = u"在周20日均线附近"
     elif _gap_index == 4:
-        _position = u"在周60日均线附近"
+        _position_last = u"在周60日均线附近"
     elif _gap_index == 5:
-        _position = u"在周120日均线附近"
+        _position_last = u"在周120日均线附近"
     elif _gap_index == 6:
-        _position = u"在月20日均线附近"
+        _position_last = u"在月20日均线附近"
     elif _gap_index == 7:
-        _position = u"在月60日均线附近"
+        _position_last = u"在月60日均线附近"
     elif _gap_index == 8:
-        _position = u"在月120日均线附近"
+        _position_last = u"在月120日均线附近"
     elif _gap_index == 9:
-        _position = u"在前期低点附近"
-    print _position.encode("utf-8") + "\n"
+        _position_last = u"在前期低点附近"
+    elif _gap_index == 10:
+        _position_last = u"在前期大低点附近"
+    print _position_last.encode("utf-8") + "\n"
 
-    stock_statistics_list.append((stock_dict[code], _gap, _gap_percent, _latest, _position))
+    # last 2nd
+    _gap_last2_list = [_last2 - _last_day_ma20, _last2 - _last_day_ma60, _last2 - _last_day_ma120,
+                       _last2 - _last_week_ma20, _last2 - _last_week_ma60, _last2 - _last_week_ma120,
+                       _last2 - _last_month_ma20, _last2 - _last_month_ma60, _last2 - _last_month_ma120,
+                       _last2 - _min, _last - _min_year]
+    _gap_last2_filter_list = list()
+    for g in _gap_last2_list:
+        if g > 0:
+            _gap_last2_filter_list.append(g)
+        else:
+            _gap_last2_filter_list.append(100000)
+
+    _position_last2 = ""
+    _gap_last2_index = _gap_last2_filter_list.index(min(_gap_last2_filter_list))
+    if _gap_last2_index == 0:
+        _position_last2 = u"在日20日均线附近"
+    elif _gap_last2_index == 1:
+        _position_last2 = u"在日60日均线附近"
+    elif _gap_last2_index == 2:
+        _position_last2 = u"在日120日均线附近"
+    elif _gap_last2_index == 3:
+        _position_last2 = u"在周20日均线附近"
+    elif _gap_last2_index == 4:
+        _position_last2 = u"在周60日均线附近"
+    elif _gap_last2_index == 5:
+        _position_last2 = u"在周120日均线附近"
+    elif _gap_last2_index == 6:
+        _position_last2 = u"在月20日均线附近"
+    elif _gap_last2_index == 7:
+        _position_last2 = u"在月60日均线附近"
+    elif _gap_last2_index == 8:
+        _position_last2 = u"在月120日均线附近"
+    elif _gap_last2_index == 9:
+        _position_last2 = u"在前期低点附近"
+    elif _gap_last2_index == 10:
+        _position_last2 = u"在前期大低点附近"
+
+    # last 3rd
+    _gap_last3_list = [_last3 - _last_day_ma20, _last3 - _last_day_ma60, _last3 - _last_day_ma120,
+                       _last3 - _last_week_ma20, _last3 - _last_week_ma60, _last3 - _last_week_ma120,
+                       _last3 - _last_month_ma20, _last3 - _last_month_ma60, _last3 - _last_month_ma120,
+                       _last3 - _min, _last - _min_year]
+    _gap_last3_filter_list = list()
+    for g in _gap_last3_list:
+        if g > 0:
+            _gap_last3_filter_list.append(g)
+        else:
+            _gap_last3_filter_list.append(100000)
+
+    _position_last3 = ""
+    _gap_last3_index = _gap_last3_filter_list.index(min(_gap_last3_filter_list))
+    if _gap_last3_index == 0:
+        _position_last3 = u"在日20日均线附近"
+    elif _gap_last3_index == 1:
+        _position_last3 = u"在日60日均线附近"
+    elif _gap_last3_index == 2:
+        _position_last3 = u"在日120日均线附近"
+    elif _gap_last3_index == 3:
+        _position_last3 = u"在周20日均线附近"
+    elif _gap_last3_index == 4:
+        _position_last3 = u"在周60日均线附近"
+    elif _gap_last3_index == 5:
+        _position_last3 = u"在周120日均线附近"
+    elif _gap_last3_index == 6:
+        _position_last3 = u"在月20日均线附近"
+    elif _gap_last3_index == 7:
+        _position_last3 = u"在月60日均线附近"
+    elif _gap_last3_index == 8:
+        _position_last3 = u"在月120日均线附近"
+    elif _gap_last3_index == 9:
+        _position_last3 = u"在前期低点附近"
+    elif _gap_last3_index == 10:
+        _position_last3 = u"在前期大低点附近"
+
+    _support_list = [_last_day_ma20, _last_day_ma60, _last_day_ma120, _last_week_ma20, _last_week_ma60, _last_week_ma120, _last_month_ma20, _last_month_ma60, _last_month_ma120, _last]
+    _support_list.sort(reverse=True)
+
+    stock_statistics_list.append((stock_dict[code], _gap, _gap_percent, _latest, _position_last,
+                                  (u"持续3天处于该位置" if _position_last2 == _position_last3 else u"已经2天处于该位置")
+                                  if _position_last2 == _position_last else u"第一次进入该位置", _lower, _support_list.index(_last)))
 
 
 with open(os.path.join(os.path.dirname(__file__), "..", "conf", "auth.txt"), "r") as rf:
@@ -160,12 +255,13 @@ for i, cd in enumerate(stock_dict.keys()):
     get_info(i+1, cd)
 
 _output = u"涨跌值排行榜如下：\n排名,  涨跌值,  股票\n"
-for i, (name, gap, percent, latest, position) in enumerate(sorted(stock_statistics_list, key=lambda x: x[1])):
+for i, (name, gap, _, _, _, _, _, _) in enumerate(sorted(stock_statistics_list, key=lambda x: x[1])):
     _output += str(i+1) + ", " + str(gap) + ", " + name + "\n"
 
 _output += u"\n涨跌幅排行榜如下：\n排名,  涨跌幅,  股票,  最近动态,  当前位置\n"
-for i, (name, gap, percent, latest, position) in enumerate(sorted(stock_statistics_list, key=lambda x: x[2])):
-    _output += str(i+1) + ", " + str(percent) + "%, " + name + ", " + latest + ", " + position + "\n"
+for i, (name, gap, percent, latest, position, status, lower, support) in enumerate(sorted(stock_statistics_list, key=lambda x: x[2])):
+    _output += str(i+1) + ", " + str(percent) + "%, " + name + ", " + latest + ", " + position + " [%s, %s, %s]\n" % \
+               (status, lower, u"已跌破%s个支撑/共9个" % support)
 
 print _output
 with open(os.path.join(os.path.dirname(__file__), "..", "output", "%s.csv" % today.strftime("%Y_%m_%d_%H_%M")), "w") as wf:
