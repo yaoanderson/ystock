@@ -134,3 +134,6 @@ dmypy.json
 
 .idea
 
+conf/stocks.json
+conf/auth.txt
+output/
