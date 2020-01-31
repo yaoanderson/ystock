@@ -133,7 +133,3 @@ dmypy.json
 *test.py
 
 .idea
-
-conf/stocks.json
-conf/auth.txt
-output/
