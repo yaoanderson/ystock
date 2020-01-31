@@ -133,3 +133,6 @@ dmypy.json
 *test.py
 
 .idea
+
+*stocks.json
+*auth.txt
