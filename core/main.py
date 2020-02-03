@@ -203,22 +203,28 @@ def get_info(num, code):
 
     _code_vals = stock_dict[code].split(",")
     _expect_break = u""
+    _expect_break_percent = 0.00
     if len(_code_vals) > 1:
         _compare_vals = _code_vals[1].strip().split("|")
-        for val in _compare_vals:
+        _num = len(_compare_vals)
+        for i, val in enumerate(_compare_vals):
             if val and _last < float(val):
-                _expect_break = u"当前" + str(_last) + u"，已突破" + val
+                _expect_break_percent = round((i+1) / float(_num), 4)
+                _expect_break = u"期望" + u"|".join(_compare_vals) + u"，当前" + str(_last) + u"，已突破" + str(i+1) + u"层/共" + str(_num) + u"层到" + val + u"以下"
 
-    stock_statistics_list.append((stock_dict[code],
+    stock_statistics_list.append((_code_vals[0], _last,
                                   _rebound_latest, _rebound_percent_latest,
                                   _rebound_3_4_year, _rebound_3_4_year_percent,
                                   _gap_to_low1, _gap_to_low2, _gap_to_low3, _break_low,
                                   _break_count, _position_last, _break_keep_days,
                                   _new_low, _last2_gap_percent, _last3_gap_percent, _latest_up_down_status,
-                                  _expect_break))
+                                  _expect_break, _expect_break_percent))
 
     print str(num) + ". " + _code_vals[0], "done"
 
+
+start_second = time.time()
+print "start"
 
 with open(os.path.join(os.path.dirname(__file__), "..", "conf", "auth.txt"), "r") as rf:
     token = rf.read()
@@ -246,8 +252,8 @@ stabled_support_statistics_list = list()
 stabled_all_low_statistics_list = list()
 expected_statistics_list = list()
 
-_output = u"\n关注股票行情如下：\n排名,  股票,  最近回调/幅度,  大半年回调/幅度,  距离历史第1/2/3低点差值（有无破低点）,  突破支撑数和当前所处支撑及时间,  最近涨跌和是否新低\n"
-for i, (name, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_3_4_year_percent, gap_to_low1, gap_to_low2, gap_to_low3, break_low, break_count, position_last, break_keep_days, new_low, last2_gap_percent, last3_gap_percent, latest_up_down_status, expect_break) in enumerate(sorted(stock_statistics_list, key=lambda x: x[4])):
+_output = u"\n关注股票行情如下：\n排名,  股票,  股价,  最近回调/幅度,  大半年回调/幅度,  距离历史第1/2/3低点差值（有无破低点）,  突破支撑数和当前所处支撑及时间,  最近涨跌和是否新低\n"
+for i, (name, last, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_3_4_year_percent, gap_to_low1, gap_to_low2, gap_to_low3, break_low, break_count, position_last, break_keep_days, new_low, last2_gap_percent, last3_gap_percent, latest_up_down_status, expect_break, expect_break_percent) in enumerate(sorted(stock_statistics_list, key=lambda x: x[5])):
     if position_last == u"":
         _support = u"跌破所有支撑)"
     else:
@@ -257,7 +263,7 @@ for i, (name, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_
     _recent_break_support = (u"当前突破" + str(break_count) + u"层支撑(" + _support) if break_count != 0 else u"当前没有突破任何支撑"
     _recent_break_low = str(gap_to_low1) + u"/" + str(gap_to_low2) + u"/" + str(gap_to_low3) + u"（" + (u"没有破任何低点" if break_low == 0 else (u"破第1低点" if break_low == 1 else (u"破第2低点" if break_low == 2 else u"破第3低点")))
 
-    _output += str(i+1) + u", " + name + u", " + \
+    _output += str(i+1) + u", " + name + u", " + str(last) + u", " + \
                str(rebound_latest) + u"/" + str(rebound_percent_latest) + u"%, " + \
                str(rebound_3_4_year) + u"/" + str(rebound_3_4_year_percent) + u"%, " + \
                _recent_break_low + u"）, " + \
@@ -274,7 +280,7 @@ for i, (name, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_
         stabled_all_low_statistics_list.append((name, break_low, _recent_break_low))
 
     if expect_break != u"":
-        expected_statistics_list.append((name, expect_break))
+        expected_statistics_list.append((name, expect_break, expect_break_percent))
 
 _output += u"\n最近无新低的股票如下：股票,  状态\n"
 for i, (name, recent_up_down_new_low) in enumerate(stabled_latest_lower_statistics_list):
@@ -289,9 +295,12 @@ for i, (name, _, recent_break_low) in enumerate(sorted(stabled_all_low_statistic
     _output += str(i+1) + u", " + name + u", " + recent_break_low + u"）\n"
 
 _output += u"\n当前突破期望低点的股票如下：股票,  状态\n"
-for i, (name, expect_break) in enumerate(expected_statistics_list):
+for i, (name, expect_break, _) in enumerate(sorted(expected_statistics_list, key=lambda x: x[2], reverse=True)):
     _output += str(i+1) + u", " + name + u", " + expect_break + u"\n"
 
 print _output
 with open(os.path.join(os.path.dirname(__file__), "..", "output", "%s.csv" % today.strftime("%Y_%m_%d_%H_%M")), "w") as wf:
     wf.write(_output.encode("utf-8"))
+
+end_second = time.time()
+print u"end", str(int(end_second - start_second)) + u"s"
