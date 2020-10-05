@@ -80,7 +80,7 @@ def get_info(num, code):
     _last_all_day_ma60 = round(sum(_all_day_ma60) / len(_all_day_ma60), 2)
     _all_day_ma120 = _close_all_day_list[-120:]
     _last_all_day_ma120 = round(sum(_all_day_ma120) / len(_all_day_ma120), 2)
-    # print "日线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_day_ma20, _last_all_day_ma60, _last_all_day_ma120)
+    # print("日线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_day_ma20, _last_all_day_ma60, _last_all_day_ma120))
 
     time.sleep(3)
 
@@ -94,7 +94,7 @@ def get_info(num, code):
     _last_all_week_ma60 = round(sum(_all_week_ma60) / len(_all_week_ma60), 2)
     _all_week_ma120 = _close_all_week_list[-120:]
     _last_all_week_ma120 = round(sum(_all_week_ma120) / len(_all_week_ma120), 2)
-    # print "周线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_week_ma20, _last_all_week_ma60, _last_all_week_ma120)
+    # print("周线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_week_ma20, _last_all_week_ma60, _last_all_week_ma120))
 
     time.sleep(3)
 
@@ -108,7 +108,7 @@ def get_info(num, code):
     _last_all_month_ma60 = round(sum(_all_month_ma60) / len(_all_month_ma60), 2)
     _all_month_ma120 = _close_all_month_list[-120:]
     _last_all_month_ma120 = round(sum(_all_month_ma120) / len(_all_month_ma120), 2)
-    # print "月线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_month_ma20, _last_all_month_ma60, _last_all_month_ma120)
+    # print("月线：20均线：%s, 60均线：%s, 120均线：%s" % (_last_all_month_ma20, _last_all_month_ma60, _last_all_month_ma120))
 
     _support_list = [_last_all_day_ma20, _last_all_day_ma60, _last_all_day_ma120,
                      _last_all_week_ma20, _last_all_week_ma60, _last_all_week_ma120,
@@ -204,13 +204,19 @@ def get_info(num, code):
     _code_vals = stock_dict[code].split(",")
     _expect_break = u""
     _expect_break_percent = 0.00
+    _expect_val = -1
     if len(_code_vals) > 1:
         _compare_vals = _code_vals[1].strip().split("|")
         _num = len(_compare_vals)
         for i, val in enumerate(_compare_vals):
-            if val and _last < float(val):
-                _expect_break_percent = round((i+1) / float(_num), 4)
-                _expect_break = u"期望" + u"|".join(_compare_vals) + u"，当前" + str(_last) + u"，已突破" + str(i+1) + u"层/共" + str(_num) + u"层到" + val + u"以下"
+            if val:
+                if val.startswith(u"!"):
+                    val = val[1:]
+                    if i == 0 or (i > 0 and _last <= float(_compare_vals[i - 1])):
+                        _expect_val = float(val)
+                if _last < float(val):
+                    _expect_break_percent = round((i+1) / float(_num), 4)
+                    _expect_break = u"期望" + u"|".join(_compare_vals) + u"，当前" + str(_last) + u"，已突破" + str(i+1) + u"层/共" + str(_num) + u"层到" + val + u"以下"
 
     stock_statistics_list.append((_code_vals[0], _last,
                                   _rebound_latest, _rebound_percent_latest,
@@ -218,13 +224,13 @@ def get_info(num, code):
                                   _gap_to_low1, _gap_to_low2, _gap_to_low3, _break_low,
                                   _break_count, _position_last, _break_keep_days,
                                   _new_low, _last2_gap_percent, _last3_gap_percent, _latest_up_down_status,
-                                  _expect_break, _expect_break_percent))
+                                  _expect_break, _expect_break_percent, _expect_val))
 
-    print str(num) + ". " + _code_vals[0], "done"
+    print(str(num) + ". " + _code_vals[0], "done")
 
 
 start_second = time.time()
-print "start"
+print("start")
 
 with open(os.path.join(os.path.dirname(__file__), "..", "conf", "auth.txt"), "r") as rf:
     token = rf.read()
@@ -253,7 +259,7 @@ stabled_all_low_statistics_list = list()
 expected_statistics_list = list()
 
 _output = u"\n关注股票行情如下：\n排名,  股票,  股价,  最近回调/幅度,  大半年回调/幅度,  距离历史第1/2/3低点差值（有无破低点）,  突破支撑数和当前所处支撑及时间,  最近涨跌和是否新低\n"
-for i, (name, last, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_3_4_year_percent, gap_to_low1, gap_to_low2, gap_to_low3, break_low, break_count, position_last, break_keep_days, new_low, last2_gap_percent, last3_gap_percent, latest_up_down_status, expect_break, expect_break_percent) in enumerate(sorted(stock_statistics_list, key=lambda x: x[5])):
+for i, (name, last, rebound_latest, rebound_percent_latest, rebound_3_4_year, rebound_3_4_year_percent, gap_to_low1, gap_to_low2, gap_to_low3, break_low, break_count, position_last, break_keep_days, new_low, last2_gap_percent, last3_gap_percent, latest_up_down_status, expect_break, expect_break_percent, expect_val) in enumerate(sorted(stock_statistics_list, key=lambda x: x[5])):
     if position_last == u"":
         _support = u"跌破所有支撑)"
     else:
@@ -280,7 +286,7 @@ for i, (name, last, rebound_latest, rebound_percent_latest, rebound_3_4_year, re
         stabled_all_low_statistics_list.append((name, break_low, _recent_break_low))
 
     if expect_break != u"":
-        expected_statistics_list.append((name, expect_break, expect_break_percent))
+        expected_statistics_list.append((name, expect_break, expect_break_percent, expect_val))
 
 _output += u"\n最近无新低的股票如下：股票,  状态\n"
 for i, (name, recent_up_down_new_low) in enumerate(stabled_latest_lower_statistics_list):
@@ -294,13 +300,13 @@ _output += u"\n最近突破前期低点的股票如下：股票,  状态\n"
 for i, (name, _, recent_break_low) in enumerate(sorted(stabled_all_low_statistics_list, key=lambda x: x[1], reverse=True)):
     _output += str(i+1) + u", " + name + u", " + recent_break_low + u"）\n"
 
-_output += u"\n当前突破期望低点的股票如下：股票,  状态\n"
-for i, (name, expect_break, _) in enumerate(sorted(expected_statistics_list, key=lambda x: x[2], reverse=True)):
-    _output += str(i+1) + u", " + name + u", " + expect_break + u"\n"
+_output += u"\n当前突破期望低点的股票如下：股票,  状态,  是否达到建仓值\n"
+for i, (name, expect_break, _, expect_val) in enumerate(sorted(expected_statistics_list, key=lambda x: x[2], reverse=True)):
+    _output += str(i+1) + u", " + name + u", " + expect_break + u", " + ((u"已达到或接近期望值" + str(expect_val)) if expect_val != -1 else u"未达到或接近期望值") + u"\n"
 
-print _output
+print(_output)
 with open(os.path.join(os.path.dirname(__file__), "..", "output", "%s.csv" % today.strftime("%Y_%m_%d_%H_%M")), "w") as wf:
     wf.write(_output.encode("utf-8"))
 
 end_second = time.time()
-print u"end", str(int(end_second - start_second)) + u"s"
+print(u"end", str(int(end_second - start_second)) + u"s")
